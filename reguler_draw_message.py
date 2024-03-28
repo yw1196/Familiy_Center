@@ -1,5 +1,5 @@
 import pandas as pd
-import sys
+
 '''
 정기모집 신청 및 추첨이 끝난 뒤
 추첨식 예약자 관리에서 해당 기수 엑셀을 다운로드 받아서
@@ -8,14 +8,15 @@ import sys
 파라미터 path = 엑셀파일 경로, status = 처리상태
 
 파라미터 값 예시
-path = D:\\계정\\Desktop\\2024\\2기\\정기모집\\filename.xlsx
+path = D:\\계정\\Desktop\\2024\\2기\\정기모집\\
+file_name = 정기모집결과.xlsx
 status = '결제완료' '결제대기' '탈락'
 '''
  
 def draw_result_message(path,file_name,status):
     df = pd.read_excel(path+file_name)
 
-    df_rows = df[df['처리상태'] == str(status)]
+    df_rows = df[df['처리상태'] == str(status)].copy()
     
     df_rows.loc[:, '일련번호'] = df_rows.groupby(df_rows.columns[11]).cumcount()+1
     df_rows.loc[:, '강좌명1'] = df_rows['예약명(강좌명)'].str[0:10]
@@ -25,7 +26,6 @@ def draw_result_message(path,file_name,status):
     df_grouped = df_rows.groupby(df_rows['일련번호'])
     
     row_threshold = 300
-
 
     for group_name, group_df in df_grouped:
         for i, chunk in enumerate(range(0, len(group_df), row_threshold), start=1):
