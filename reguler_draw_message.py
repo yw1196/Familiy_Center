@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 '''
 정기모집 신청 및 추첨이 끝난 뒤
@@ -17,14 +18,27 @@ def draw_result_message(path,file_name,status):
     df = pd.read_excel(path+file_name)
 
     df_rows = df[df['처리상태'] == str(status)].copy()
-    
+    # 예약자ID값 누적빈도를 나타내는 열 생성
     df_rows.loc[:, '일련번호'] = df_rows.groupby(df_rows.columns[11]).cumcount()+1
     df_rows.loc[:, '강좌명1'] = df_rows['예약명(강좌명)'].str[0:10]
     df_rows.loc[:, '강좌명2'] = df_rows['예약명(강좌명)'].str[10:20]
     df_rows['empty'] = None
-    
-    df_grouped = df_rows.groupby(df_rows['일련번호'])
-    
+
+    new_df = pd.DataFrame()
+
+    for _, row in df_rows.iterrows():
+        if '(' in row['휴대전화번호'] and ')' in row['휴대전화번호']:
+            extracted_number = re.search(r'\((.*)\)', row['휴대전화번호']).group(1)
+            new_row = row.to_frame().T
+            new_row['휴대전화번호'] = extracted_number
+            new_df = pd.concat([new_df, new_row], ignore_index=True)
+
+    df_rows = pd.concat([df_rows,new_df], ignore_index=True)
+
+    # 휴대전화번호 괄호 없얘기
+    df_rows['휴대전화번호'] = df_rows['휴대전화번호'].apply(lambda x: re.sub(r'\([^()]*\)', '', x))
+
+    df_grouped = df_rows.groupby(df_rows['일련번호']) 
     row_threshold = 300
 
     for group_name, group_df in df_grouped:
